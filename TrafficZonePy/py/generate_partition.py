@@ -5,6 +5,7 @@ from imports import *
 import utils
 import traceback
 import sys
+import random
 
 root_path = '\\'.join(os.path.abspath(os.path.dirname(__file__)).split('\\')[:-1])
 boundary_path = os.path.join(root_path,'data','source','administrative','boundary')
@@ -68,7 +69,7 @@ def parse_inner_coords(regcode,road,river,rail):
 				res.add(tuple(c))
 	return [list(x) for x in list(res)]
 
-def partition_call(region_code, partition, road, railway, river):
+def partition_call(region_code, partition, road, railway, river, cluster_flag):
 	regcode = region_code
 
 	boundary_path = os.path.join(root_path,'data','source','administrative','boundary')
@@ -78,7 +79,7 @@ def partition_call(region_code, partition, road, railway, river):
 	inner = parse_inner_coords(regcode, road=road, river=river, rail=railway)
 
 	# print 'before inner upsampling: %s, %s'%(len(inner), ADMIN_DICT[region_code])
-	inner = utils.upsample(inner, 0.001)
+	inner = utils.upsample(inner, 0.0025)
 	# print 'after inner upsampling: %s, %s'%(len(inner), ADMIN_DICT[region_code])
 
 	boundary_pair = []
@@ -118,11 +119,17 @@ def partition_call(region_code, partition, road, railway, river):
 			tri_centrals.append(key)
 			tri[tuple(key)] = [list(tri_point[k[0]]), list(tri_point[k[1]]), list(tri_point[k[2]])]
 
-	part_num = partition
-	# clutser_centers = MiniBatchKMeans(n_clusters=part_num).fit(tri_centrals)
-	clutser_centers = AgglomerativeClustering(n_clusters=part_num, linkage='complete', affinity='euclidean').fit(tri_centrals)
-	# clutser_centers = AgglomerativeClustering(n_clusters=part_num, linkage='complete', affinity='manhattan').fit(tri_centrals)
-	# clutser_centers = KMeans(n_clusters=part_num, algorithm='auto').fit(tri_centrals)
+	# part_num = partition
+	part_num = int(len(tri_centrals)/2.5)
+
+	if cluster_flag == "kmeans":
+		clutser_centers = KMeans(n_clusters=part_num, algorithm='auto').fit(tri_centrals)
+	elif cluster_flag == 'batchkmeans':
+		clutser_centers = MiniBatchKMeans(n_clusters=part_num).fit(tri_centrals)
+	elif cluster_flag == 'agglomanhattan':
+		clutser_centers = AgglomerativeClustering(n_clusters=part_num, linkage='complete', affinity='manhattan').fit(tri_centrals)
+	else:
+		clutser_centers = AgglomerativeClustering(n_clusters=part_num, linkage='complete', affinity='euclidean').fit(tri_centrals)
 	
 	tri_cent_labels = clutser_centers.labels_
 
@@ -181,25 +188,34 @@ def main(argv):
 	# 27:'27_lixian'
 	# }
 
-	if len(argv) != 6:
+	if len(argv) not in [6,7]:
 		# print 'u need to input the right params...'
 		print 0
-	else:
+	elif len(argv) == 7:
+		cluster_flag = argv[6].lower()
+		# cluster_flag = 'kmeans'
 		region_code = int(argv[1])
 		partition = int(argv[2])
 		road = False if (argv[3]).lower()=="false" else True
 		railway = False if (argv[4]).lower()=="false" else True
 		river = False if (argv[5]).lower()=="false" else True
-		edges = partition_call(region_code, partition, road, railway, river)
+		edges = partition_call(region_code, partition, road, railway, river, cluster_flag)
 
 		save_json(edges)
+		print edges
+	else:
+		cluster_flag = 'aggloeuc'
+		region_code = int(argv[1])
+		partition = int(argv[2])
+		road = False if (argv[3]).lower()=="false" else True
+		railway = False if (argv[4]).lower()=="false" else True
+		river = False if (argv[5]).lower()=="false" else True
+		edges = partition_call(region_code, partition, road, railway, river, cluster_flag)
 
+		save_json(edges)
+		# print len(edges)
 		print edges
 
-		# buffer_file = open(root_path+'\\data\\output\\buffer.data', 'w')
-		# buffer_file.write(edges)
-		# buffer_file.close()
-
 if __name__ == '__main__':
-	# sys.argv.extend([9,25,'True','True','True'])
+	sys.argv.extend([20,20,'True','True','True','aggloeuc'])
 	main(sys.argv)

@@ -2,6 +2,7 @@ package trafficZone;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class TrafficZone {  
@@ -10,7 +11,8 @@ public class TrafficZone {
 	private String road = "True";
 	private String railway = "True";
 	private String river = "True";
-	private List<LatiLongitude> latiLongitudeList;
+	private String clusterType = "aggloEuc";
+	private List<LatiLongitude> latiLongitudeList = new ArrayList<LatiLongitude>();
 	public TrafficZone() {
 	}
 	public TrafficZone(String regionCode, String trafficZoneNumber, List<LatiLongitude> latiLongitudeList) {
@@ -60,16 +62,34 @@ public class TrafficZone {
 
 	public List<LatiLongitude> getLatiLongitudeList() throws IOException {
 
-    	String head = new File(".").getCanonicalPath();
+	    return latiLongitudeList;
+	}
+
+	public void setLatiLongitudeList(List<LatiLongitude> latiLongitudeList) {
+	    this.latiLongitudeList = latiLongitudeList;
+	}
+	
+	public String getClusterType() {
+		return clusterType;
+	}
+	
+	public void setClusterType(String clusterType) {
+		this.clusterType = clusterType;
+	}
+	
+	public List<LatiLongitude> computationsTrafficZone(String regionCode, int partitionNum, boolean road, boolean railway, boolean river) throws IOException{
+    	this.setRegionCode(regionCode);
+    	this.setTrafficZoneNumber(Integer.toString(partitionNum));
+		
+		String head = new File(".").getCanonicalPath();
     	String tail = "\\TrafficZonePy\\py\\generate_partition.py";
-    	String regCode = this.regionCode;
-    	String partition = this.trafficZoneNumber;
-    	String road = this.road;
-    	String railway = this.railway;
-    	String river = this.river;
-    	
-    	String lst = Parser.exeCmd("python "+head+tail+" "+regCode+" "+partition+" "+road+" "+railway+" "+river);
-    	
+    	String regCode = regionCode;
+    	String partition = Integer.toString(partitionNum);
+    	String roadFlag = (road==true)?"True":"False";
+    	String railwayFlag = (railway==true)?"True":"False";
+    	String riverFlag = (river==true)?"True":"False";
+    	String cluster = this.clusterType;
+    	String lst = Parser.exeCmd("python "+head+tail+" "+regCode+" "+partition+" "+roadFlag+" "+railwayFlag+" "+riverFlag+" "+cluster);
     	lst = lst.replace("[","").replace("]", "");
     	String[] splt_lst = lst.split(",");
     	for(int i=0;i<(splt_lst.length)/2;i++) {
@@ -77,13 +97,10 @@ public class TrafficZone {
     		coord.setLongitude(Double.valueOf(splt_lst[i]));
     		coord.setLatitude(Double.valueOf(splt_lst[i+1]));
     		latiLongitudeList.add(coord);
-    	}	
-	    return latiLongitudeList;
-	}
+    	}
+    	this.setLatiLongitudeList(latiLongitudeList);
 
-	public void setLatiLongitudeList(List<LatiLongitude> latiLongitudeList) {
-	    this.latiLongitudeList = latiLongitudeList;
+		return latiLongitudeList;
 	}
-
 
 }
