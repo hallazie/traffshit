@@ -21,16 +21,33 @@ root_path = '\\'.join(os.path.abspath(os.path.dirname(__file__)).split('\\')[:-1
 
 GLO_I = 14
 ADMIN_DICT = {
-	2:'i2_wenjiang',
-	3:'i3_wuhou',
-	4:'i4_qingyang',
-	5:'i5_jinniu',
-	6:'i6_pixian',
-	10:'i10_jinjiang',
-	11:'i11_chenghua',
-	12:'i12_longquanyi',
-	13:'i13_xindu',
-	14:'i14_qingbaijiang'
+1:'1_hongxinzhen',
+2:'2_heshanzhen',
+3:'3_sanjiangxiang',
+4:'4_qionglaishi',
+5:'5_pengshanxian',
+6:'6_xinjinxian',
+7:'7_shuangliuqu',
+8:'8_dayixian',
+9:'9_chongzhoushi',
+10:'10_shuimozhen',
+11:'11_wenjiangqu',
+12:'12_wuhouqu',
+13:'13_qingyangqu',
+14:'14_jinniuqu',
+15:'15_pixian',
+16:'16_ziyangshi',
+17:'17_jianyangshi',
+18:'18_jinjiangqu',
+19:'19_chenghuaqu',
+20:'20_longquanyiqu',
+21:'21_xinduqu',
+22:'22_qingbaijiangqu',
+23:'23_jintangxian',
+24:'24_wolongzhen',
+25:'25_gengdaxiang',
+26:'26_caopoxiang',
+27:'27_lixian'
 }
 
 def get_cd_geo():
@@ -73,7 +90,7 @@ def filt_geo_lst(geo, key, value_lst, fname):
 
 def get_boundary_path(idx):
 	name = 'i2_wenjiang'
-	geo = geojson.load(codecs.open(root_path+'\\source\\administrative\\boundary\\'+ADMIN_DICT[idx]+'.geojson','r','latin-1'))
+	geo = geojson.load(codecs.open(root_path+'\\data\\source\\administrative\\boundary\\'+ADMIN_DICT[idx]+'.geojson','r','latin-1'))
 	coords = geo['features'][0]['geometry']['coordinates'][0]
 	codes = [Path.MOVETO]+[Path.LINETO]*(len(coords)-2)+[Path.CLOSEPOLY]
 	boundary_path = Path(coords, codes)
@@ -90,19 +107,19 @@ def get_inner_geo(key, value_lst, idx):
 		primlst = ['river']
 		fpath = 'river'
 	b_path = get_boundary_path(idx)
-	geo_line = geojson.load(codecs.open(root_path+'\\data\\chengdu_china_osm_line.geojson','r','latin-1'))
+	geo_line = geojson.load(codecs.open(root_path+'\\data\\ex_osm_line.geojson','r','latin-1'))
 	inner_features = []
 
 	for feature in geo_line['features']:
-		# if feature['properties'][key] in value_lst:
-		if feature['properties'][key] not in ['subway','platform',None]:
+		if feature['properties'][key] in value_lst:
+		# if feature['properties'][key] not in ['subway','platform',None]:
 			coord = feature['geometry']['coordinates']
 			for i in range(len(coord)-1):
 				p = [coord[i],coord[i+1]]
 				c = [Path.MOVETO, Path.CLOSEPOLY]
 				pth = Path(p,c)
 				if b_path.contains_path(pth):
-					inner_features.append(utils.downsample(p,0.002))
+					inner_features.append(utils.downsample(p,0.003))
 					# if feature['properties'][key] in primlst:
 					# 	inner_features.append(utils.downsample(p,0.001))
 					# 	# inner_features.append(p)
@@ -114,15 +131,15 @@ def get_inner_geo(key, value_lst, idx):
 	for feature in inner_features:
 		final_features.append({'geometry':{'type':'LineString','coordinates':feature}})
 	geo_new = {'type': 'FeatureCollection', 'features': final_features}
-	json.dump(geo_new, open(root_path+'\\source\\administrative\\'+fpath+'\\'+ADMIN_DICT[idx]+'.geojson', 'w'))
+	json.dump(geo_new, open(root_path+'\\data\\source\\administrative\\'+fpath+'\\'+ADMIN_DICT[idx]+'.geojson', 'w'))
 
 if __name__ == '__main__':
 	# lst = [3]
-	lst = [2,3,4,5,6,10,11,12,13,14]
+	lst = ADMIN_DICT.keys()
 	for e in lst:
-		get_inner_geo('railway', ['rail'], e)
-		get_inner_geo('waterway', ['river'], e)
+		# get_inner_geo('railway', ['rail'], e)
+		# get_inner_geo('waterway', ['river'], e)
 		# get_inner_geo('highway', ['primary','secondary','tertiary','trunk','residential','unclassified','motorway','construction'], e)
-		# get_inner_geo('highway', ['primary','secondary','tertiary','trunk','motorway'], e)
-		# get_inner_geo('highway', ['primary','trunk','motorway','secondary'], e)
+		get_inner_geo('highway', ['primary','secondary','tertiary','trunk','motorway'], e)
+		# get_inner_geo('highway', ['primary','trunk'], e)
 		print str(e)+' finished'

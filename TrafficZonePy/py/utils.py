@@ -15,35 +15,11 @@ def length(c1,c2):
 def euc_dis(p1,p2):
 	return math.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2)
 
-# def upsample(nodes,gap):
-# 	prev_len = 0
-# 	cnt = 0
-# 	while prev_len != len(nodes):
-# 		if cnt%20==0:
-# 			print 'removed %s nodes'%cnt
-# 		prev_len = len(nodes)
-# 		remove_flag = False
-# 		remove_cnt = 0
-# 		for node in nodes:
-# 			if remove_flag:
-# 				break
-# 			for neighbor in nodes:
-# 				if node != neighbor and euc_dis(node, neighbor)<gap:
-# 					remove_cnt += 1
-# 					if remove_cnt == 2:
-# 						nodes.remove(node)
-# 						cnt += 1
-# 						remove_flag = True
-# 						break
-# 	return nodes
-
 def upsample(nodes,gap):
 	removed = True
 	cnt_total = 0
 	for node in nodes:
 		cnt = 0
-		# if cnt_total!=0 and cnt_total%500==0:
-		# 	print 'removed %s nodes'%cnt_total
 		for neighbor in nodes:
 			if node!=neighbor and euc_dis(node, neighbor)<gap:
 				nodes.remove(neighbor)

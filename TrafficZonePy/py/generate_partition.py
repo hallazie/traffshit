@@ -7,6 +7,8 @@ import traceback
 import sys
 import random
 
+import clustering
+
 root_path = '\\'.join(os.path.abspath(os.path.dirname(__file__)).split('\\')[:-1])
 boundary_path = os.path.join(root_path,'data','source','administrative','boundary')
 road_path = os.path.join(root_path,'data','source','administrative','road')
@@ -49,24 +51,61 @@ GAP = 0.0004
 
 def parse_inner_coords(regcode,road,river,rail):
 	res = set()
+	cnt = 0
 	if road:
 		geo = geojson.load(codecs.open(os.path.join(road_path, ADMIN_DICT[regcode]+'.geojson'),'r','latin-1'))
 		for e in geo['features']:
 			line = e['geometry']['coordinates']
-			for c in line:
-				res.add(tuple(c))
+			l1 = len(line)
+			line = utils.downsample(line,0.003)
+			cnt += (len(line)-l1)
+			if len(line)>9:
+				for c in range(1,len(line)-1):
+					res.add(tuple(line[c]))
+			else:
+				for c in line:
+					res.add(tuple(c))
+	else:
+		geo = geojson.load(codecs.open(os.path.join(road_path, ADMIN_DICT[regcode]+'_min.geojson'),'r','latin-1'))
+		for e in geo['features']:
+			line = e['geometry']['coordinates']
+			l1 = len(line)
+			line = utils.downsample(line,0.003)
+			cnt += (len(line)-l1)
+			if len(line)>9:
+				for c in range(1,len(line)-1):
+					res.add(tuple(line[c]))
+			else:
+				for c in line:
+					res.add(tuple(c))
+
 	if river:
 		geo = geojson.load(codecs.open(os.path.join(river_path, ADMIN_DICT[regcode]+'.geojson'),'r','latin-1'))
 		for e in geo['features']:
 			line = e['geometry']['coordinates']
-			for c in line:
-				res.add(tuple(c))
+			l1 = len(line)
+			line = utils.downsample(line,0.001)
+			cnt += (len(line)-l1)
+			if len(line)>9:
+				for c in range(1,len(line)-1):
+					res.add(tuple(line[c]))
+			else:
+				for c in line:
+					res.add(tuple(c))
 	if rail:
 		geo = geojson.load(codecs.open(os.path.join(rail_path, ADMIN_DICT[regcode]+'.geojson'),'r','latin-1'))
 		for e in geo['features']:
 			line = e['geometry']['coordinates']
-			for c in line:
-				res.add(tuple(c))
+			l1 = len(line)
+			line = utils.downsample(line,0.001)
+			cnt += (len(line)-l1)
+			if len(line)>9:
+				for c in range(1,len(line)-1):
+					res.add(tuple(line[c]))
+			else:
+				for c in line:
+					res.add(tuple(c))
+	# print cnt
 	return [list(x) for x in list(res)]
 
 def partition_call(region_code, partition, road, railway, river, cluster_flag):
@@ -79,7 +118,7 @@ def partition_call(region_code, partition, road, railway, river, cluster_flag):
 	inner = parse_inner_coords(regcode, road=road, river=river, rail=railway)
 
 	# print 'before inner upsampling: %s, %s'%(len(inner), ADMIN_DICT[region_code])
-	inner = utils.upsample(inner, 0.0025)
+	inner = utils.upsample(inner, 0.001)
 	# print 'after inner upsampling: %s, %s'%(len(inner), ADMIN_DICT[region_code])
 
 	boundary_pair = []
@@ -119,17 +158,22 @@ def partition_call(region_code, partition, road, railway, river, cluster_flag):
 			tri_centrals.append(key)
 			tri[tuple(key)] = [list(tri_point[k[0]]), list(tri_point[k[1]]), list(tri_point[k[2]])]
 
-	# part_num = partition
-	part_num = int(len(tri_centrals)/2.5)
+	part_num = partition
+	# part_num = int(len(tri_centrals)/4)
 
-	if cluster_flag == "kmeans":
-		clutser_centers = KMeans(n_clusters=part_num, algorithm='auto').fit(tri_centrals)
-	elif cluster_flag == 'batchkmeans':
-		clutser_centers = MiniBatchKMeans(n_clusters=part_num).fit(tri_centrals)
-	elif cluster_flag == 'agglomanhattan':
-		clutser_centers = AgglomerativeClustering(n_clusters=part_num, linkage='complete', affinity='manhattan').fit(tri_centrals)
-	else:
+	# if cluster_flag == "kmeans":
+	# 	clutser_centers = KMeans(n_clusters=part_num, algorithm='auto').fit(tri_centrals)
+	# elif cluster_flag == 'batchkmeans':
+	# 	clutser_centers = MiniBatchKMeans(n_clusters=part_num).fit(tri_centrals)
+	# elif cluster_flag == 'agglomanhattan':
+	# 	clutser_centers = AgglomerativeClustering(n_clusters=part_num, linkage='complete', affinity='manhattan').fit(tri_centrals)
+	# else:
+	# 	clutser_centers = AgglomerativeClustering(n_clusters=part_num, linkage='complete', affinity='euclidean').fit(tri_centrals)
+
+	if part_num > 30:
 		clutser_centers = AgglomerativeClustering(n_clusters=part_num, linkage='complete', affinity='euclidean').fit(tri_centrals)
+	else:
+		clutser_centers = KMeans(n_clusters=part_num, algorithm='auto').fit(tri_centrals)
 	
 	tri_cent_labels = clutser_centers.labels_
 
@@ -143,6 +187,8 @@ def partition_call(region_code, partition, road, railway, river, cluster_flag):
 	for polygons in features:
 		edges.append(utils.parse_edges(polygons))
 		# edges.append(polygons)
+
+	# edges = clustering.poly_cluster(edges, partition)
 
 	return edges
 
@@ -213,9 +259,8 @@ def main(argv):
 		edges = partition_call(region_code, partition, road, railway, river, cluster_flag)
 
 		save_json(edges)
-		# print len(edges)
 		print edges
 
 if __name__ == '__main__':
-	sys.argv.extend([20,20,'True','True','True','aggloeuc'])
+	# sys.argv.extend([14,15,'True','True','True','kmeans'])
 	main(sys.argv)
