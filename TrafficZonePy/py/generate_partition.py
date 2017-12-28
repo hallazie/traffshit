@@ -2,14 +2,19 @@
 
 from imports import *
 
-import utils
 import traceback
 import sys
 import random
+import platform
 
 import clustering
+import utils
 
-root_path = '\\'.join(os.path.abspath(os.path.dirname(__file__)).split('\\')[:-1])
+if 'windows' in platform.platform().lower():
+	SPLIT_OPT = '\\'
+else:
+	SPLIT_OPT = '/'
+root_path = SPLIT_OPT.join(os.path.abspath(os.path.dirname(__file__)).split(SPLIT_OPT)[:-1])
 boundary_path = os.path.join(root_path,'data','source','administrative','boundary')
 road_path = os.path.join(root_path,'data','source','administrative','road')
 river_path = os.path.join(root_path,'data','source','administrative','river')
@@ -201,7 +206,7 @@ def save_json(edges):
 		# geometry_dict = {'type': 'Polygon', 'coordinates': edges[i]}
 		feature_list.append({'type': 'Feature', 'id': i, 'properties': property_dict, 'geometry': geometry_dict})	
 	geo_dict = {'type': 'FeatureCollection', 'features': feature_list}
-	json.dump(geo_dict, open(root_path+'\\data\\output\\clusters.geojson', 'w'))
+	json.dump(geo_dict, open(os.path.join(root_path,'data','output','clusters.geojson'), 'w'))
 
 def main(argv):
 	# ADMIN_DICT = {
@@ -262,5 +267,5 @@ def main(argv):
 		print edges
 
 if __name__ == '__main__':
-	# sys.argv.extend([14,15,'True','True','True','kmeans'])
+	# sys.argv.extend([21,15,'False','True','True','kmeans'])
 	main(sys.argv)
