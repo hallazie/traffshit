@@ -28,5 +28,4 @@ public class LatiLongitude {
 	    this.longitude = longitude;
 	}
 
-
 }

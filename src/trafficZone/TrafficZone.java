@@ -3,6 +3,7 @@ package trafficZone;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class TrafficZone {  
@@ -78,9 +79,20 @@ public class TrafficZone {
 	}
 	
 	public List<LatiLongitude> computationsTrafficZone(String regionCode, int partitionNum, boolean road, boolean railway, boolean river) throws IOException{
-    	this.setRegionCode(regionCode);
-    	this.setTrafficZoneNumber(Integer.toString(partitionNum));
+    	/** 输入参数传给Parser，再通过Parser获取 Python 模块生成的经纬度对列表*/
 		
+		String[] regionCodeList = {"4","5","6","7","8","9","11","12","13","14","15","16","17","18","19","20","21","22","23"};
+		if(!Arrays.asList(regionCodeList).contains(regionCode)){
+			System.out.println("请输入正确的区域代码（4,5,6,7,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23）");
+			return latiLongitudeList;
+		}
+		if(partitionNum>500 || partitionNum <1){
+			System.out.println("请输入正确的分区数量（0<partitionNum<500）");
+			return latiLongitudeList;			
+		}
+		
+		this.setRegionCode(regionCode);
+    	this.setTrafficZoneNumber(Integer.toString(partitionNum));
 		String head = new File(".").getCanonicalPath();
     	String tail = "\\TrafficZonePy\\py\\generate_partition.py";
     	String regCode = regionCode;
@@ -89,6 +101,7 @@ public class TrafficZone {
     	String railwayFlag = (railway==true)?"True":"False";
     	String riverFlag = (river==true)?"True":"False";
     	String cluster = this.clusterType;
+    	
     	String lst = Parser.exeCmd("python "+head+tail+" "+regCode+" "+partition+" "+roadFlag+" "+railwayFlag+" "+riverFlag+" "+cluster);
     	lst = lst.replace("[","").replace("]", "");
     	String[] splt_lst = lst.split(",");
@@ -102,5 +115,5 @@ public class TrafficZone {
 
 		return latiLongitudeList;
 	}
-
+	
 }

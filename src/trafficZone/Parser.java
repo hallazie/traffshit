@@ -4,8 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-public class Parser {  
-    public static String exeCmd(String commandStr) {  
+public class Parser {
+	/**  解析调用算法的 Python 接口 */
+    public static String exeCmd(String commandStr) {
+    	/** 命令行执行函数，获取 Python 的执行结果 */
         BufferedReader br = null;  
         try {
             Process p = Runtime.getRuntime().exec(commandStr);  
@@ -33,7 +35,7 @@ public class Parser {
         }  
     }
     
-    public static void main(String[] args) throws IOException {  
+    public static void main(String[] args) throws IOException { 
     	System.out.println("None");
     }  
 }

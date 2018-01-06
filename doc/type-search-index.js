@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"LatiLongitude","h":"","u":""},{"l":"Parser","h":"","u":""},{"l":"TrafficZone","h":"","u":""}]
